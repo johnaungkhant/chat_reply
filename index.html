@@ -95,7 +95,10 @@
           }
         });
         const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error || `Request failed (${response.status}).`);
+        if (!response.ok) {
+          const message = [result.error, result.detail].filter(Boolean).join(' ');
+          throw new Error(message || `Request failed (${response.status}).`);
+        }
         return result;
       }
 
