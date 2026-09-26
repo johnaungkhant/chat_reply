@@ -92,16 +92,16 @@
         return result;
       }
 
-      async function refreshCount() {
+      async function refreshCount(updateStatus = true) {
         refreshButton.disabled = true;
         countOutput.textContent = '…';
         try {
           const result = await apiRequest('/api/recipients');
           countOutput.textContent = result.recipientCount.toLocaleString();
-          setStatus('Audience count is up to date.');
+          if (updateStatus) setStatus('Audience count is up to date.');
         } catch (error) {
           countOutput.textContent = '—';
-          setStatus(error.message, 'error');
+          if (updateStatus) setStatus(error.message, 'error');
         } finally {
           refreshButton.disabled = false;
         }
@@ -141,7 +141,7 @@
           const summary = `Finished: ${result.sent} sent, ${result.failed} failed, ${result.total} total.`;
           setStatus(result.failed ? `${summary} First error: ${result.failures[0]?.error || 'Check Meta API settings.'}` : summary,
             result.failed ? 'error' : 'success');
-          await refreshCount();
+          await refreshCount(false);
         } catch (error) {
           setStatus(error.message, 'error');
         } finally {
