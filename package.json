@@ -1,0 +1,14 @@
+{
+  "name": "messenger-chat-broadcast",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node --check api/recipients.js && node --check api/send.js && node --check lib/config.js && node --check lib/auth.js && node --check lib/database.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.14.0"
+  }
+}

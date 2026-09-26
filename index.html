@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f6f3">
+    <title>Messenger broadcast</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="wordmark" href="/" aria-label="Messenger broadcast home">
+          <span class="mark" aria-hidden="true">M</span>
+          <span>Message desk</span>
+        </a>
+        <span class="topbar-note">PAGE MESSENGER</span>
+      </header>
+
+      <section class="workspace" aria-labelledby="page-title">
+        <div class="heading-row">
+          <div>
+            <p class="eyebrow">OUTBOUND</p>
+            <h1 id="page-title">Send a message</h1>
+          </div>
+          <div class="audience" aria-live="polite">
+            <span class="audience-label">Chat history audience</span>
+            <strong id="recipient-count">—</strong>
+            <span class="audience-caption">unique Messenger IDs</span>
+          </div>
+        </div>
+
+        <form id="message-form">
+          <label class="field-label" for="message">Message</label>
+          <textarea id="message" name="message" maxlength="2000" rows="7" required
+            placeholder="Write the message you want to send…"></textarea>
+          <div class="field-meta">
+            <span>Sent separately to each unique ID in your chat history.</span>
+            <span id="character-count">0 / 2000</span>
+          </div>
+
+          <div class="policy-note" role="note">
+            <span class="note-mark" aria-hidden="true">i</span>
+            <p>Only message people eligible under Meta’s Messenger policies. Standard replies are generally limited to the 24-hour window after a person’s last interaction.</p>
+          </div>
+
+          <label class="field-label password-label" for="app-password">App password</label>
+          <input id="app-password" name="app-password" type="password" autocomplete="current-password" required placeholder="Password set in Vercel environment variables">
+
+          <div class="actions">
+            <button class="send-button" id="send-button" type="submit">
+              <span>Send to all</span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+            <p id="status" class="status" role="status" aria-live="polite">Messages are sent immediately and cannot be recalled.</p>
+          </div>
+        </form>
+      </section>
+
+      <footer class="footer">
+        <span>Recipients are read from your chat history database.</span>
+        <button id="refresh-button" class="refresh-button" type="button" title="Refresh recipient count">Refresh count</button>
+      </footer>
+    </main>
+
+    <script>
+      const passwordInput = document.querySelector('#app-password');
+      const messageInput = document.querySelector('#message');
+      const countOutput = document.querySelector('#recipient-count');
+      const statusOutput = document.querySelector('#status');
+      const sendButton = document.querySelector('#send-button');
+      const refreshButton = document.querySelector('#refresh-button');
+
+      passwordInput.value = sessionStorage.getItem('appPassword') || '';
+
+      function setStatus(text, kind = '') {
+        statusOutput.textContent = text;
+        statusOutput.dataset.kind = kind;
+      }
+
+      async function apiRequest(url, options = {}) {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            'x-app-password': passwordInput.value,
+            ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+            ...options.headers
+          }
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Request failed (${response.status}).`);
+        return result;
+      }
+
+      async function refreshCount() {
+        refreshButton.disabled = true;
+        countOutput.textContent = '…';
+        try {
+          const result = await apiRequest('/api/recipients');
+          countOutput.textContent = result.recipientCount.toLocaleString();
+          setStatus('Audience count is up to date.');
+        } catch (error) {
+          countOutput.textContent = '—';
+          setStatus(error.message, 'error');
+        } finally {
+          refreshButton.disabled = false;
+        }
+      }
+
+      messageInput.addEventListener('input', () => {
+        document.querySelector('#character-count').textContent = `${messageInput.value.length} / 2000`;
+      });
+
+      passwordInput.addEventListener('change', () => {
+        sessionStorage.setItem('appPassword', passwordInput.value);
+      });
+
+      refreshButton.addEventListener('click', refreshCount);
+
+      document.querySelector('#message-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const recipientCount = Number.parseInt(countOutput.textContent.replaceAll(',', ''), 10);
+        if (!Number.isFinite(recipientCount)) {
+          setStatus('Refresh the recipient count before sending.', 'error');
+          return;
+        }
+        if (recipientCount === 0) {
+          setStatus('There are no Messenger IDs in the chat history table.', 'error');
+          return;
+        }
+        if (!window.confirm(`Send this message to ${recipientCount.toLocaleString()} Messenger users?`)) return;
+
+        sendButton.disabled = true;
+        sendButton.querySelector('span').textContent = 'Sending…';
+        setStatus('Sending messages. Keep this page open until the result appears.');
+        try {
+          const result = await apiRequest('/api/send', {
+            method: 'POST',
+            body: JSON.stringify({ message: messageInput.value })
+          });
+          const summary = `Finished: ${result.sent} sent, ${result.failed} failed, ${result.total} total.`;
+          setStatus(result.failed ? `${summary} First error: ${result.failures[0]?.error || 'Check Meta API settings.'}` : summary,
+            result.failed ? 'error' : 'success');
+          await refreshCount();
+        } catch (error) {
+          setStatus(error.message, 'error');
+        } finally {
+          sendButton.disabled = false;
+          sendButton.querySelector('span').textContent = 'Send to all';
+        }
+      });
+
+      refreshCount();
+    </script>
+  </body>
+</html>
