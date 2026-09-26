@@ -18,7 +18,13 @@ async function graphPost(path, payload, label) {
   }
 }
 
-const sendMetaMessage = (senderId, message) => graphPost('me/messages', { recipient: { id: senderId }, message }, 'sendMetaMessage');
+const ALLOWED_TAGS = ['CONFIRMED_EVENT_UPDATE', 'POST_PURCHASE_UPDATE', 'ACCOUNT_UPDATE'];
+
+const sendMetaMessage = (senderId, message, tag) => graphPost('me/messages', {
+  recipient: { id: senderId },
+  message,
+  ...(tag ? { messaging_type: 'MESSAGE_TAG', tag } : {})
+}, 'sendMetaMessage');
 
 module.exports = async function handler(request, response) {
   if (request.method !== 'POST') {
@@ -35,6 +41,11 @@ module.exports = async function handler(request, response) {
     return response.status(400).json({ error: `Message must be between 1 and ${MAX_MESSAGE_LENGTH} characters.` });
   }
 
+  const tag = typeof request.body?.tag === 'string' ? request.body.tag : '';
+  if (tag && !ALLOWED_TAGS.includes(tag)) {
+    return response.status(400).json({ error: 'Unknown message tag.' });
+  }
+
   try {
     const [rows] = await pool.execute(
       "SELECT DISTINCT sender_id FROM chat_history WHERE sender_id IS NOT NULL AND sender_id <> ''"
@@ -47,7 +58,7 @@ module.exports = async function handler(request, response) {
     for (const row of rows) {
       const senderID = String(row.sender_id);
       try {
-        await sendMetaMessage(senderID, { text: messageText });
+        await sendMetaMessage(senderID, { text: messageText }, tag);
         sent += 1;
       } catch (error) {
         failed += 1;

@@ -27,7 +27,7 @@ body {
   font-family: 'DM Sans', sans-serif;
 }
 
-button, input, textarea { font: inherit; }
+button, input, textarea, select { font: inherit; }
 
 .shell {
   width: min(100% - 48px, 940px);
@@ -110,7 +110,7 @@ h1 {
 
 .field-label { display: block; margin-bottom: 9px; font-size: 13px; font-weight: 700; }
 
-textarea, input[type='password'] {
+textarea, input[type='password'], select {
   width: 100%;
   border: 1px solid #cbd4cc;
   border-radius: 5px;
@@ -121,9 +121,10 @@ textarea, input[type='password'] {
 }
 
 textarea { min-height: 165px; padding: 15px 16px; resize: vertical; line-height: 1.55; }
-input[type='password'] { height: 46px; padding: 0 13px; }
+input[type='password'], select { height: 46px; padding: 0 13px; }
+select { margin-bottom: 18px; }
 textarea::placeholder, input::placeholder { color: #98a29c; }
-textarea:focus, input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgb(23 107 82 / 12%); }
+textarea:focus, input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgb(23 107 82 / 12%); }
 
 .field-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; color: var(--muted); font-size: 11px; }
 
