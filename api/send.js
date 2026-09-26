@@ -18,7 +18,7 @@ async function graphPost(path, payload, label) {
   }
 }
 
-const ALLOWED_TAGS = ['CONFIRMED_EVENT_UPDATE', 'POST_PURCHASE_UPDATE', 'ACCOUNT_UPDATE'];
+const ALLOWED_TAGS = ['CONFIRMED_EVENT_UPDATE', 'POST_PURCHASE_UPDATE', 'ACCOUNT_UPDATE', 'HUMAN_AGENT'];
 
 const sendMetaMessage = (senderId, message, tag) => graphPost('me/messages', {
   recipient: { id: senderId },
