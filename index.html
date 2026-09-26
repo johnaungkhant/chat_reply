@@ -109,9 +109,11 @@
           const result = await apiRequest('/api/recipients');
           countOutput.textContent = result.recipientCount.toLocaleString();
           if (updateStatus) setStatus('Audience count is up to date.');
+          return true;
         } catch (error) {
           countOutput.textContent = '—';
           if (updateStatus) setStatus(error.message, 'error');
+          return false;
         } finally {
           refreshButton.disabled = false;
         }
@@ -129,10 +131,11 @@
 
       document.querySelector('#message-form').addEventListener('submit', async (event) => {
         event.preventDefault();
-        const recipientCount = Number.parseInt(countOutput.textContent.replaceAll(',', ''), 10);
+        let recipientCount = Number.parseInt(countOutput.textContent.replaceAll(',', ''), 10);
         if (!Number.isFinite(recipientCount)) {
-          setStatus('Refresh the recipient count before sending.', 'error');
-          return;
+          setStatus('Checking password and recipient count…');
+          if (!await refreshCount()) return;
+          recipientCount = Number.parseInt(countOutput.textContent.replaceAll(',', ''), 10);
         }
         if (recipientCount === 0) {
           setStatus('There are no Messenger IDs in the chat history table.', 'error');
