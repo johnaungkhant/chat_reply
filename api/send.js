@@ -1,5 +1,5 @@
 const { isAuthorized } = require('../lib/auth');
-const { getChatHistoryQuery, getGraphVersion } = require('../lib/config');
+const { getChatHistoryQuery, META_GRAPH_VERSION } = require('../lib/config');
 const { getPool } = require('../lib/database');
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -48,7 +48,6 @@ module.exports = async function handler(request, response) {
   }
 
   try {
-    const version = getGraphVersion();
     const [recipients] = await getPool().query(getChatHistoryQuery());
     if (!recipients.length) {
       return response.status(200).json({ total: 0, sent: 0, failed: 0, failures: [] });
@@ -63,7 +62,7 @@ module.exports = async function handler(request, response) {
       while (cursor < recipients.length) {
         const recipient = recipients[cursor++];
         try {
-          await sendToRecipient(version, pageId, accessToken, recipient.messengerId, message);
+          await sendToRecipient(META_GRAPH_VERSION, pageId, accessToken, recipient.messengerId, message);
           sent += 1;
         } catch (error) {
           failed += 1;
