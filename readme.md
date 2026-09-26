@@ -6,7 +6,7 @@ A small Node.js app for Vercel. It reads distinct Messenger IDs from a MySQL cha
 
 1. Add the environment variables from `.env.example` to the Vercel project. Use a Meta Page access token with the required Messenger permissions; keep it server-side and never put it in browser code.
 2. The app reads distinct, non-empty `sender_id` values from `gbv.chat_history`. The table must contain Page-scoped Messenger user IDs (PSIDs).
-3. Set `META_PAGE_ID` and `META_PAGE_ACCESS_TOKEN` for the Facebook Page that sends the messages. The app currently uses Graph API `v25.0`. Set `DB_SSL=true` when your MySQL provider requires TLS.
+3. Set `META_PAGE_ACCESS_TOKEN` for the Facebook Page that sends the messages. The app posts to `me/messages` on Graph API `v21.0`.
 4. Deploy the project to Vercel. Open the deployed site, enter `APP_PASSWORD`, and refresh the audience count before sending.
 
 For local development, install dependencies with `npm install`, copy `.env.example` to `.env` and fill it in, then run `vercel dev` with the Vercel CLI installed.
